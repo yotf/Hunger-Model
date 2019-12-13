@@ -1,0 +1,31 @@
+import unittest
+from model import *
+
+
+
+class TestModel(unittest.TestCase):
+
+    def setUp(self):
+        WIDTH = 10
+        HEIGHT = 10
+        N = 10
+        POISON_LEVELS = 8
+        self.model = HungerModel(N,WIDTH,HEIGHT)
+        
+
+    
+
+    def tearDown(self):
+        self.assertAlmostEqual
+        pass
+    
+
+    def test_make_insertion_dict(self):
+        p_levels = 10
+        mem_size = 10
+        ind = self.model.make_insertion_dict(br_stepena_otrovnosti = p_levels, memory_size=mem_size)
+        self.assertEqual(len(ind.keys()),p_levels)
+
+if __name__=="__main__":
+    t = TestModel()
+    unittest.main()
