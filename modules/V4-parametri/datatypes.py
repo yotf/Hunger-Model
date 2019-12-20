@@ -21,7 +21,6 @@ class MemoryDeque(deque):
         assert(type(ktuple)==KombinacijaTuple)
         for entry in self:
             if entry.kombinacija ==ktuple:
-                print ("nadjeno u memoriji!")
                 return entry
         return None
 

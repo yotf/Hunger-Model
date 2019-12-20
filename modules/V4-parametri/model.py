@@ -83,7 +83,7 @@ class HungryAgent(Agent):
             for ktuple in self.procedural:
                 if atribut in ktuple.kombinacija:
                     hranljivost+=ktuple.hranljivost
-        print ("HRANLJIVOST: %s" %hranljivost)
+        # print ("HRANLJIVOST: %s" %hranljivost)
         return hranljivost 
 
     def decide_eat(self,property_tuple):
@@ -92,11 +92,11 @@ class HungryAgent(Agent):
         rezultat = self.procedural.search_memory(property_tuple)
         if rezultat:
             eat = False if rezultat.hranljivost<0 else True
-            print ("Nadjena hranljivost je " + str(rezultat.hranljivost))
+#            print ("Nadjena hranljivost je " + str(rezultat.hranljivost))
         else:
             assert(eat is None)
             pretp_hranljivost = self.scrape_memory(property_tuple)
-            print ("Pretpostavljena hranljivost je " + str(pretp_hranljivost))
+#            print ("Pretpostavljena hranljivost je " + str(pretp_hranljivost))
             eat = True if pretp_hranljivost>=0 else False
         return eat
 
@@ -113,7 +113,8 @@ class HungryAgent(Agent):
             self.log_food_or_poision(self.model.food_dict[property_tuple])
             #print (self.procedural)
         else:
-            print ("Nothing here!!")
+#            print ("Nothing here!!")
+            pass
 
     def store_in_memory(self,hranljivost,property_tuple):
         """Stavlja u memoriju,svaki put kada pojede nesto, ako nije vec u memoriji
@@ -121,7 +122,7 @@ class HungryAgent(Agent):
         rezultat = self.procedural.search_memory(property_tuple)
         if rezultat:
             self.procedural.remove(rezultat)
-        print (hranljivost)
+#        print (hranljivost)
         poz = self.insertion_dict[hranljivost]
         self.procedural.insert_and_pop(poz,MemoryTuple(kombinacija=property_tuple,hranljivost=hranljivost))
         assert(len(self.procedural)<=self.memory_size)
@@ -216,8 +217,8 @@ class HungerModel(Model):
                     nivo+=1
             assert(nivo!=0)
             food_dict[k]=nivo
-        print (len(food_dict.keys()))
-        print (len(kombinacije))
+        # print (len(food_dict.keys()))
+        # print (len(kombinacije))
         assert(len(food_dict.keys())==len(kombinacije))
         return food_dict
 
