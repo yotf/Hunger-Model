@@ -8,12 +8,7 @@ import itertools
 from collections import deque
 from itertools import starmap,product
 import collections
-from DataCollection_v4 import *
 from datatypes import *
-
-
-
-
 
 
 class FoodAgent(Agent):
@@ -41,10 +36,7 @@ class HungryAgent(Agent):
         self.procedural =MemoryDeque([],maxlen=memory_size)
         self.pojedeni_otrovi=0
         self.pojedena_hrana=0
-        if memory_size<=0:
-            raise SmallMemoryError("Agent memory must be positive!")
-        if br_stepena_otrovnosti<=1 or (br_stepena_otrovnosti%2)!=0:
-            raise PoisonError("Broj stepena otrovnosti mora biti paran i pozitivan!")
+
         self.insertion_dict = self.make_insertion_dict(
             br_stepena_otrovnosti= br_stepena_otrovnosti,
             memory_size=memory_size
@@ -52,7 +44,7 @@ class HungryAgent(Agent):
         
     def move(self):
         """The agents will move in a random direction and lose specified energy"""
-        self.energy=-self.walk_energy
+        self.energy-=self.walk_energy
         possible_steps = self.model.grid.get_neighborhood(self.pos,moore=True,include_center = False)
         new_position = self.random.choice(possible_steps)
         self.model.grid.move_agent(self,new_position)
@@ -100,6 +92,7 @@ class HungryAgent(Agent):
             eat = True if pretp_hranljivost>=0 else False
         return eat
 
+
         
     def eat_or_not(self,food):
         """Pojede ili preskoci objekat koji je nasao"""
@@ -122,7 +115,6 @@ class HungryAgent(Agent):
         rezultat = self.procedural.search_memory(property_tuple)
         if rezultat:
             self.procedural.remove(rezultat)
-#        print (hranljivost)
         poz = self.insertion_dict[hranljivost]
         self.procedural.insert_and_pop(poz,MemoryTuple(kombinacija=property_tuple,hranljivost=hranljivost))
         assert(len(self.procedural)<=self.memory_size)
@@ -155,29 +147,28 @@ class HungryAgent(Agent):
     
 class HungerModel(Model):
     """A model with some number of agents."""
-    boje = ["red","yellow","green","blue"]
-    ukusi = ["kiselo","ljuto","gorko","slatko"]
-    oblici = ["zvezda","kvadrat","krug","trougao"]
+    # boje = ["red","yellow","green","blue"]
+    # ukusi = ["kiselo","ljuto","gorko","slatko"]
+    # oblici = ["zvezda","kvadrat","krug","trougao"]
+    boje = range(0,100)
+    ukusi = range(0,100)
+    oblici = range(0,100)
     sve_kombinacije= list(starmap(KombinacijaTuple,product(boje,ukusi,oblici)))
-    def __init__(self,N,width,height,num_of_food=64,br_stepena_otrovnosti=8,agent_memory_size=32,agent_walk_energy=0.2):
-        #ovih num_of_food random bira TODO
-        if num_of_food<=0:
-            raise HranaError("Nedovoljan broj hrane/otrova")
-        if num_of_food<br_stepena_otrovnosti:
-            raise HranaError("Manje hrane od stepena otrovnosti!!")
-        self.kombinacije = self.sve_kombinacije[:num_of_food]
-        
-        if br_stepena_otrovnosti>len(self.sve_kombinacije):
-            raise PoisonError("Ima vise stepena otrovnosti nego hrane!!")
-        self.food_dict = self.raspodeli_hranu(self.kombinacije,br_stepena_otrovnosti)
-        if num_of_food>len(self.kombinacije): #moramo napraviti duplikate
-            dodatak= [self.random.choice(self.kombinacije) for i in range(num_of_food-len(self.kombinacije))]
-            assert(len(dodatak)==num_of_food-len(self.sve_kombinacije))
+    def __init__(self,N,size,br_hrane_po_stepenu,br_stepena_otrovnosti,agent_memory_size=32,agent_walk_energy=0.2):
+        import math
+        br_hrane = br_hrane_po_stepenu*br_stepena_otrovnosti
+        self.kombinacije = self.sve_kombinacije[:br_hrane]
+        self.check_input(agent_memory_size,br_stepena_otrovnosti,br_hrane)
+
+        self.food_dict = self.raspodeli_hranu(self.kombinacije,br_stepena_otrovnosti,br_hrane_po_stepenu)
+        if br_hrane>len(self.kombinacije): #moramo napraviti duplikate
+            dodatak= [self.random.choice(self.kombinacije) for i in range(br_hrane-len(self.kombinacije))]
+            assert(len(dodatak)==br_hrane-len(self.sve_kombinacije))
             self.kombinacije = self.sve_kombinacije + dodatak
         self.br_stepena_otrovnosti=br_stepena_otrovnosti
         self.num_agents = N
-        self.num_food = num_of_food
-        self.grid = MultiGrid(width,height,True)
+        self.num_food = br_hrane
+        self.grid = MultiGrid(size,size,True)
         self.schedule= RandomActivation(self)
         self.running = True
         for i in range(self.num_agents):
@@ -196,29 +187,45 @@ class HungerModel(Model):
             y = self.random.randrange(self.grid.height)
             self.grid.place_agent(f,(x,y))
             
-            
         self.datacollector = DataCollector(
-        model_reporters = {"TotalKnowledge":compute_knowledge,"TotalEnergy":total_energy,"TotalExperience":measure_experience,"TotalFood":total_pojedena_hrana,"TotalPoison":total_pojedeni_otrovi})
+        model_reporters = {"TotalKnowledge":compute_knowledge,"TotalEnergy":total_energy,"TotalExperience":measure_experience,"TotalFood":total_pojedena_hrana,"TotalPoison":total_pojedeni_otrovi,"AverageEnergyPerCapita":average_energy_per_capita})
   #      agent_reporters = {"Knowledge":"knowledge"})
+
+    def check_input(self,agent_memory_size,br_stepena_otrovnosti,br_hrane):
+        if agent_memory_size<=0:
+            raise SmallMemoryError("Agent memory must be positive!")
+        if br_stepena_otrovnosti<=1 or (br_stepena_otrovnosti%2)!=0:
+            raise PoisonError("Broj stepena otrovnosti mora biti paran i pozitivan!")
+        #ovih num_of_food random bira TODO
+        if br_hrane<=0:
+            raise HranaError("Nedovoljan broj hrane/otrova")
+        if br_hrane<br_stepena_otrovnosti:
+             raise HranaError("Manje hrane od stepena otrovnosti!!")
+        if br_stepena_otrovnosti>len(self.sve_kombinacije):
+            raise PoisonError("Ima vise stepena otrovnosti nego hrane!!")
+        
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()
         
-    def raspodeli_hranu(self,kombinacije,br_stepena_otrovnosti):
+    def raspodeli_hranu(self,kombinacije,br_stepena_otrovnosti,br_hrane_po_stepenu):
         """Od svih mogucih kombinacija hrane, on ih svrstava po otrovnosti. znaci ako imamo 64 hrane i 8 nivoa otrovnosti svaki nivo ce imati 8 stvari"""
-        nivo = -br_stepena_otrovnosti//2-1 #krecemo od -
+        from math import ceil
+        def chunks(lst, n):
+            """Yield successive n-sized chunks from lst."""
+            for i in range(0, len(lst), n):
+                yield lst[i:i + n]
         food_dict = dict()
-        broj_objekata = len(kombinacije)
-        br_objekata_po_stepenu = broj_objekata//br_stepena_otrovnosti
-        for i,k in enumerate(kombinacije):
-            if (i%br_objekata_po_stepenu==0):
+        chunks_kombinacija = list(chunks(kombinacije,br_hrane_po_stepenu))
+        nivo = -br_stepena_otrovnosti//2
+        
+        for (i,chunk) in enumerate(chunks_kombinacija):
+
+            if nivo==0:
                 nivo+=1
-                if nivo==0:
-                    nivo+=1
-            assert(nivo!=0)
-            food_dict[k]=nivo
-        # print (len(food_dict.keys()))
-        # print (len(kombinacije))
+            for tpl in chunk:
+                food_dict[tpl] = nivo
+            nivo+=1
         assert(len(food_dict.keys())==len(kombinacije))
         return food_dict
 
@@ -231,7 +238,6 @@ def compute_knowledge(model):
     ukupno = 0
     for agent in  agents:
         for key,value in agent.svet.items():
-            assert(len(value)<=4)
             ukupno+=len(value)
     return ukupno
 
@@ -267,3 +273,13 @@ def total_energy(model):
         ukupno+=agent.energy
         
     return ukupno
+
+def average_energy_per_capita(model):
+    num_agents = len(izdvoji_agente(model))
+    avg_energy = total_energy(model)/num_agents
+    return avg_energy
+                     
+    
+if __name__=="__main__":
+    m = HungerModel(10,10,10,br_stepena_otrovnosti=18)
+    
