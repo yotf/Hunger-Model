@@ -1,7 +1,6 @@
 from mesa import Agent, Model
 from mesa.time import RandomActivation
 from mesa.batchrunner import BatchRunner
-import matplotlib.pyplot as plt
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 import itertools
@@ -9,6 +8,7 @@ from collections import deque
 from itertools import starmap,product
 import collections
 from datatypes import *
+from timeit import default_timer as timer
 
 
 class FoodAgent(Agent):
@@ -18,14 +18,14 @@ class FoodAgent(Agent):
         self.oblik = oblik
         self.ukus = ukus
         self.size = 0.5
-    def step(self):
-        pass
+
 
 
 class HungryAgent(Agent):
     def __init__(self,unique_id,model,memory_size,br_stepena_otrovnosti,walk_energy):
         super().__init__(unique_id,model)
         self.energy = 0
+        self.ide = unique_id
 
         assert(walk_energy>=0)
         self.walk_energy=walk_energy
@@ -141,6 +141,9 @@ class HungryAgent(Agent):
        # print("Imam:%s dinara" %self.wealth)
         self.move()
         self.explore()
+#        print ("pomerio se agent br.{}".format(self.ide))
+
+
         #moze da komunicira sa okruzenjem i da saznaje o drugim bicima
         
         
@@ -156,6 +159,7 @@ class HungerModel(Model):
     sve_kombinacije= list(starmap(KombinacijaTuple,product(boje,ukusi,oblici)))
     def __init__(self,N,size,br_hrane_po_stepenu,br_stepena_otrovnosti,agent_memory_size=32,agent_walk_energy=0.2):
         import math
+        start = timer()
         br_hrane = br_hrane_po_stepenu*br_stepena_otrovnosti
         self.kombinacije = self.sve_kombinacije[:br_hrane]
         self.check_input(agent_memory_size,br_stepena_otrovnosti,br_hrane)
@@ -182,7 +186,6 @@ class HungerModel(Model):
             kombinacija = self.kombinacije[i]
             id_offset = i+1000
             f = FoodAgent(id_offset,self, kombinacija[0],kombinacija[1],kombinacija[2])
-            self.schedule.add(f)
             x = self.random.randrange(self.grid.width)
             y = self.random.randrange(self.grid.height)
             self.grid.place_agent(f,(x,y))
@@ -190,6 +193,8 @@ class HungerModel(Model):
         self.datacollector = DataCollector(
         model_reporters = {"TotalKnowledge":compute_knowledge,"TotalEnergy":total_energy,"TotalExperience":measure_experience,"TotalFood":total_pojedena_hrana,"TotalPoison":total_pojedeni_otrovi,"AverageEnergyPerCapita":average_energy_per_capita})
   #      agent_reporters = {"Knowledge":"knowledge"})
+        end = timer()
+        print("time elapsed on Model.__init__ function : {}".format(end-start))
 
     def check_input(self,agent_memory_size,br_stepena_otrovnosti,br_hrane):
         if agent_memory_size<=0:
@@ -207,6 +212,10 @@ class HungerModel(Model):
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()
+
+
+
+        
         
     def raspodeli_hranu(self,kombinacije,br_stepena_otrovnosti,br_hrane_po_stepenu):
         """Od svih mogucih kombinacija hrane, on ih svrstava po otrovnosti. znaci ako imamo 64 hrane i 8 nivoa otrovnosti svaki nivo ce imati 8 stvari"""

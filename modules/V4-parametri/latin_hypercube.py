@@ -48,7 +48,7 @@ def generate_parameter_dict(param_values,velicina):
                      "br_hrane_po_stepenu","br_stepena_otrovnosti",
                      "agent_memory_size","agent_walk_energy"]
     parameter_scale = [1,1,
-                       1,1,
+                       0.1,1,
                        1,0.01]
     parameter_scale = [s*velicina for s in parameter_scale]
     food_num = param_values[2]*velicina
@@ -68,13 +68,13 @@ def run_for_param_set(param_values):
     # assert(velicine.count(velicine[0]) == len(velicine))
     # velicina = 10**velicine[0]
     #    assert(velicina<=1000)
-    SAMPLE_SIZE = 50
+    SAMPLE_SIZE = 100
     velicina = 1000 #ove mozemo menjati da vidimo kako se ponasa sa drugim, samo to mora da ide sa sample sizom. ako ima
     #50 ss, onda ce svejedno vec pola uzeti
     parameters=generate_parameter_dict(param_values,velicina)
     print (parameters)
     results_for_same=[]
-    for i in range(50):
+    for i in range(SAMPLE_SIZE):
         print(i)
         res=run_model_and_get_value(parameters,output_parameter=OUTPUT_PARAMETER,num_of_steps=500)
         results_for_same.append(res)
@@ -85,18 +85,21 @@ def run_for_param_set(param_values):
 import multiprocessing
 import time
 num_of_params = 6
-x = pyDOE.lhs(n=6,samples =50)
-
-pool = multiprocessing.Pool(3)
-all_results = pool.map(run_for_param_set,x)
+for c in sample_methods:
+    x = pyDOE.lhs(n=6,samples =50,criterion = c)
+    pool = multiprocessing.Pool(2)
+    all_results = pool.map(run_for_param_set,x)
+    with open("lhc-{}-{}.pkl".format(c,time.asctime()),"wb") as f:
+        pickle.dump(all_results,f,pickle.HIGHEST_PROTOCOL)
+    df = pd.DataFrame(all_results)
+    df.to_csv("lhc-{}-{}.csv".format(c,time.asctime()))
+    print (all_results)
 # all_results = []
 # for param_values in x:
 #     parameters = run_for_param_set(param_values)
 #     all_results.append(parameters)
 
-with open("lhc-{}.pkl".format(time.asctime()),"wb") as f:
-    pickle.dump(all_results,f,pickle.HIGHEST_PROTOCOL)
-print (all_results)
+
         
 
 #ok ovo funkionise, imamo nase parametre, i sad mozemo da ih prosledimo
