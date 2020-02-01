@@ -3,9 +3,9 @@ from mesa.visualization.modules import CanvasGrid,ChartModule
 from mesa.visualization.ModularVisualization import ModularServer
 import math
 
-KOLICINA_CELIJA = 55
+KOLICINA_CELIJA = 110
 DIMENZIJA_TABLE = math.ceil(math.sqrt(KOLICINA_CELIJA*4))
-BROJ_LEKOVA = 10
+BROJ_LEKOVA = 100
 
 
 def agent_portrayal(agent):

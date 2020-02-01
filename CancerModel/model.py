@@ -24,6 +24,7 @@ class CureAgent(Agent):
     def __init__(self,unique_id,model):
         super().__init__(unique_id,model)
         self.color = "yellow"
+        self.energy = 50
 
     def step(self):
         self.move()
@@ -31,6 +32,11 @@ class CureAgent(Agent):
 
     def move(self):
         """The agents will move in a random direction and lose specified energy"""
+        self.energy-=1
+        print(self.energy)
+        if self.energy==0:
+            self.kill_self()
+            
         possible_steps = self.model.grid.get_neighborhood(self.pos,moore=True,include_center = False)
         new_position = self.random.choice(possible_steps)
         self.model.grid.move_agent(self,new_position)
@@ -41,21 +47,23 @@ class CureAgent(Agent):
         for c in cells:
             eat = choice([True,False],1,p=[0.2,0.8])
             if eat:
-                print("EATEN") #TODO da li umre svaki put kad pokusa uopste?? 
+                print("EATEN") 
                 self.model.grid.remove_agent(c)
-                self.model.grid.remove_agent(self)
-                self.model.schedule.remove(self)
+            self.kill_self()
+    def kill_self(self):
+        self.model.grid.remove_agent(self)
+        self.model.schedule.remove(self)
             
+def percentage(percent, whole):
+    return (percent * whole) / 100.0
 
-
+# TODO dummy objekat u scheduler
 
 class CancerModel(Model):
     def __init__(self,cancer_cells_number,cure_number):
         import math
-        def percentage(percent, whole):
-            return (percent * whole) / 100.0
         grid_size = math.ceil(math.sqrt(cancer_cells_number*4))
-        self.grid = MultiGrid(grid_size,grid_size,False) #TODO proveri da ne ide okolo,
+        self.grid = MultiGrid(grid_size,grid_size,False) 
         #MOZDA TREBA SINGLEGRID????????
         poss = self.generate_cancer_cell_positions(grid_size,cancer_cells_number)
         num_CSC = math.ceil(percentage(1,cancer_cells_number))
