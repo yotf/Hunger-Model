@@ -28,7 +28,11 @@ def get_rgb_from_hex(hex_rgb):
     return r,g,b
 
 def add_to_color(hex_color,amount):
-    return hex(int(hex_color,16)+amount).lstrip("0x")
+    minn = 0
+    maxn =255
+    new_value = int(hex_color,16)+amount
+    new_value = minn if new_value < minn else maxn if new_value > maxn else new_value
+    return hex(new_value).lstrip("0x")
     
     
         
@@ -48,10 +52,6 @@ class CancerCell(Cell):
         r,g,b = [add_to_color(c,-20) for c in [r,g,b]]
         return "#{}{}{}".format(r,g,b)
 
-        
-        
-        
-        
 
 
        # TODO mutiramo 5% srednjih, ili speed ili radoznalost za jedan stepen
@@ -61,7 +61,6 @@ class CancerCell(Cell):
 class CancerStemCell(CancerCell):
     def __init__(self,unique_id,model,value):
         super().__init__(unique_id,model,value)
-        self.color = "red"
         self.color = "#ff0000"
         self.points_if_eaten = value
 
@@ -75,7 +74,7 @@ class CureAgent(Agent):
         r = original_color[1:3]
         g = original_color[3:5]
         b = original_color[5:]
-        self.color = "#{}{}{}".format(r,hex(int(g,16)-speed*10).lstrip("0x"),b)
+        self.color = "#{}{}{}".format(r,add_to_color(g,-(speed*2)),b)
         self.energy = np.inf
         self.speed = speed
         self.radoznalost = radoznalost
@@ -127,7 +126,8 @@ class SmartCureAgent(CureAgent):
         self.color = "#8878c3"
         g = self.color[3:5]
         r = self.color[1:3]
-        self.color = "#{}{}{}".format(r,hex(int(g,16)+speed*10).lstrip("0x"),self.color[5:])
+        b= self.color[5:] #napravi ovo da bude neka funkcija u parent klasi TODO
+        self.color = "#{}{}{}".format(r,add_to_color(g,-(speed*2)),b)
 
 
     def eat_function(self,celija,_):
@@ -155,7 +155,7 @@ class CancerModel(Model):
                            "RadoznalostSum":radoznalost_sum  })
         grid_size = math.ceil(math.sqrt(cancer_cells_number*4))
         self.grid = MultiGrid(grid_size,grid_size,False)
-        speeds = list(range(10)) #popravi te boje TODO
+        speeds = list(range(grid_size//2)) #popravi te boje TODO
         print(speeds)
 
         poss = self.generate_cancer_cell_positions(grid_size,cancer_cells_number)
@@ -219,7 +219,9 @@ class CancerModel(Model):
         self.counter+=1
         self.schedule.step()
         if self.counter%10 ==0: # TODO ovo menjamo, parameter TODO
-            #TODO sredi boje
+            #TODO sredi boje i
+            #TODO sredi ovo pucanje zbog nule u latin hypercube
+            #TODO napravi da je R promenljivo
             self.duplicate_or_kill()
         
 
