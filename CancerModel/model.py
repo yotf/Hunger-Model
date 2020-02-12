@@ -4,6 +4,7 @@ from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 from numpy.random import choice
 import numpy as np
+KILLING_PROBABILITY = 0.2
 def percentage(percent, whole):
     return (percent * whole) / 100.0
 
@@ -30,11 +31,12 @@ def get_rgb_from_hex(hex_rgb):
 def add_to_color(hex_color,amount):
     minn = 0
     maxn =255
+    print(hex_color)
     new_value = int(hex_color,16)+amount
     new_value = minn if new_value < minn else maxn if new_value > maxn else new_value
     return hex(new_value).lstrip("0x")
     
-    
+#TODO nasledjuju iksustvo deepcopy
         
 class CancerCell(Cell):
     def __init__(self,unique_id,model,value):
@@ -44,17 +46,26 @@ class CancerCell(Cell):
     def stress(self):
         mutate = choice([True,False],1,p=[0.1,0.9])
         self.color = self.color if not mutate else self.mutate_color(self.color)
+        print(self.color)
 
     
 
     def mutate_color(self,color_hex,by=5):
         r,g,b = get_rgb_from_hex(color_hex)
+        print (r,g,b)
         r,g,b = [add_to_color(c,-20) for c in [r,g,b]]
         return "#{}{}{}".format(r,g,b)
 
 
-
        # TODO mutiramo 5% srednjih, ili speed ili radoznalost za jedan stepen
+       # TODO budu veci ovi sto znaju vise
+       # velicina memorije je stvar koja se selektuje
+       # TODO napraviti fajl koji pusta simulacije, da bude onako kao robustness latin hyperc....
+       # Na osnovu tumora i postavke da nam kaze najbolju populaciju, i pusta simulacije TODO ali kasnije
+       # TODO smisslja igor kako velicina populacije da se odredi
+       # TODO mutacije, nov random broj u tim okvirima 5%
+       # TODO pogledati sve varijante evolutivnog algoritma, kako se razvijaju
+       # TODO pogledati kako radi onaj jutjub kanal sto se tice umiranja
 
 
 
@@ -71,10 +82,8 @@ class CureAgent(Agent):
         import numpy as np
         self.points = 0
         original_color = "#ffd700"
-        r = original_color[1:3]
-        g = original_color[3:5]
-        b = original_color[5:]
-        self.color = "#{}{}{}".format(r,add_to_color(g,-(speed*2)),b)
+        r,g,b = get_rgb_from_hex(original_color)
+        self.color = "#{}{}{}".format(r,add_to_color(g,-(speed*5)),b)
         self.energy = np.inf
         self.speed = speed
         self.radoznalost = radoznalost
@@ -116,7 +125,8 @@ class CureAgent(Agent):
         self.model.grid.remove_agent(self)
 
 
-
+#TODO ogranicenje memorije,
+# TODO proverava da li je u memoriji
 
 class SmartCureAgent(CureAgent):
     def __init__(self,unique_id,model,speed,radoznalost):
@@ -127,17 +137,18 @@ class SmartCureAgent(CureAgent):
         g = self.color[3:5]
         r = self.color[1:3]
         b= self.color[5:] #napravi ovo da bude neka funkcija u parent klasi TODO
-        self.color = "#{}{}{}".format(r,add_to_color(g,-(speed*2)),b)
+        self.color = "#{}{}{}".format(r,add_to_color(g,-(speed*5)),b)
 
+        #TODO
 
     def eat_function(self,celija,_):
         """Samo je ovo drugcije u odnosu na pretka"""
         mem = self.memorija.get(celija.color,0) 
         if mem>=0:
             self.memorija[celija.color] = celija.points_if_eaten
-            verovatnoca =0.2 if mem>0 else self.radoznalost
+            verovatnoca =KILLING_PROBABILITY if mem>0 else self.radoznalost
             return super().eat_function(None,verovatnoca) 
-        elif mem<0:
+        else:
             self.memorija[celija.color] = celija.points_if_eaten
             return False
 
@@ -147,7 +158,7 @@ class CancerModel(Model):
     def __init__(self,cancer_cells_number,cure_number,eat_values, verovatnoca_mutacije):
         self.counter = 0
         self.cure_number = cure_number
-        radoznalosti = list(np.arange(0.01,0.2,0.01))
+        radoznalosti = list(np.arange(0.01,KILLING_PROBABILITY,0.01))
         print(radoznalosti)
         self.datacollector = DataCollector(
         model_reporters = {"FitnessFunction":fitness_funkcija,

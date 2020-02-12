@@ -8,30 +8,29 @@ N = 0
 class TestAgent(unittest.TestCase):
 
     def setUp(self):
-        pass
+        self.HungerModelMock =HungerModel(N,WIDTH,HEIGHT)
+
     
 
     def tearDown(self):
         pass
-    
 
-    def test_make_insertion_dict(self):
+    def make_insertion_dict(self):
 
         walk_energy=0
         br_hrane = 100
 
-        for mem_size in range(-100,100):
+        for mem_size in range(-10,50):
 
             if mem_size<=0:
                 self.assertRaises(SmallMemoryError)
                 continue
-            for p_levels in range(-100,100):
+            for p_levels in range(-10,50):
                 if p_levels<=1 or (p_levels%2)!=0 or p_levels>len(HungerModel.sve_kombinacije):
                     self.assertRaises(PoisonError)
                     continue
 
-                for br_hrane in range(-100,100):
-                    print(p_levels,mem_size,br_hrane)
+                for br_hrane in range(-10,50):
                     if br_hrane<=0 or br_hrane<p_levels:
                         self.assertRaises(HranaError)
                         continue
@@ -47,11 +46,6 @@ class TestAgent(unittest.TestCase):
 
                     self.assertEqual(len(ind.keys()),p_levels)
 
-                    for komb in HungerModel.sve_kombinacije:
-                        food = FoodAgent(3,mockModel,boja=komb.boja,ukus=komb.ukus,oblik=komb.oblik)
-                        self.agent.
-
-
                     for k,i in ind.items():
                         self.assertGreaterEqual(i,0)
                         if (mem_size//p_levels)!=0:
@@ -60,16 +54,39 @@ class TestAgent(unittest.TestCase):
                             self.assertLessEqual(k,p_levels//2)
 
     def test_agent_explore(self):
+        pass
 
-        mockModel = HungerModel(N,
-                                WIDTH,HEIGHT,
-                                )
+    def test_scrape_memory(self):
+        """Treba da sabere sve instance gde se dat tuple pojavio u memoriji
+        ovo mozemo da testiramo tako sto cemo dati nekoliko primera proceduralne memorije
+        i nekoliko primera tuplova, i proveriti da li je dobar zbir"""
+        brot = self.HungerModelMock.br_stepena_otrovnosti
+        mem_size = 32
+        agent = HungryAgent(3,self.HungerModelMock,memory_size=mem_size,br_stepena_otrovnosti=brot,walk_energy=0)
+        #        procedural = MemoryDeque([],maxlen=mem_size)
+        hr=5
+        agent.procedural.insert_and_pop(0,MemoryTuple(kombinacija=KombinacijaTuple(boja="crvena",ukus="ljuto",oblik="kvadrat"),hranljivost=hr))
+        rez = agent.scrape_memory(KombinacijaTuple(boja="crvena",ukus="kiselo",oblik="zvezda"))
+        self.assertEqual(rez,hr)
+        agent.procedural.insert_and_pop(0,MemoryTuple(kombinacija=KombinacijaTuple(boja="crvena",ukus="kiselo",oblik="kvadrat"),hranljivost=-hr))
+        rez = agent.scrape_memory(KombinacijaTuple(boja="crvena",ukus="kiselo",oblik="zvezda"))
+        self.assertEqual(rez,-5)
+
         
-        sve_kombinacije = HungerModel.sve_kombinacije
 
-        for komb in sve_kombinacije:
+    def test_decide_eat(self):
+        """Ubacujemo neke stvari u memoriju i vidimo kako reaguje na nove objekte, 
+        tj. da li ce odluciti da ih pojede."""
+        pass
 
-            
+    def test_eat_or_not(self):
+        
+        pass
 
+    def test_store_in_memory(self):
+        pass
+
+    
+        
             
 
